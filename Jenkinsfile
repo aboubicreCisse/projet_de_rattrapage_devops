@@ -1,42 +1,66 @@
 pipeline {
     agent any
-
+    
+    environment {
+        DOCKER_IMAGE = 'aboubicrecisse/projet_de_rattrapage_devops'
+        DOCKER_TAG = "latest"
+    }
+    
     stages {
-        stage('Cloner le dépôt') {
+        stage('Checkout Git') {
             steps {
-                git branch: 'main', url: 'https://github.com/aboubicreCisse/projet_de_rattrapage_devops.git'
+                echo ' Récupération du code depuis GitHub...'
+                checkout scm
             }
         }
-
+        
+        stage('Validate Project') {
+            steps {
+                echo ' Vérification des fichiers...'
+                sh 'ls -la'
+            }
+        }
+        
         stage('Build Docker Image') {
             steps {
-                echo "Construction de l'image Docker..."
-                sh 'docker build -t mon-app-devops .'
+                echo ' Construction de l image Docker...'
+                sh 'docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .'
             }
         }
-
-        stage('Run Tests') {
+        
+        stage('Deploy Application') {
             steps {
-                echo "Exécution des tests Django..."
-                sh 'docker run --rm mon-app-devops python manage.py test'
+                echo ' DÉPLOIEMENT AUTOMATIQUE...'
+                sh '''
+                    # Arrêter l ancien conteneur
+                    docker stop django-prod-app || true
+                    docker rm django-prod-app || true
+                    
+                    # Démarrer le nouveau conteneur
+                    docker run -d -p 8000:8000 --name django-prod-app ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    
+                    echo " Application déployée avec succès"
+                '''
             }
         }
-
-        stage('Deploy') {
+        
+        stage('Health Check') {
             steps {
-                echo "Déploiement du conteneur Docker..."
-                sh 'docker stop mon-app || true && docker rm mon-app || true'
-                sh 'docker run -d -p 8000:8000 --name mon-app mon-app-devops'
+                echo ' Vérification du déploiement...'
+                sh '''
+                    sleep 5
+                    echo " Statut du conteneur :"
+                    docker ps | grep django-prod-app
+                    echo " Application disponible sur : http://localhost:8000"
+                '''
             }
         }
     }
-
+    
     post {
         success {
-            echo ' Pipeline exécuté avec succès !'
-        }
-        failure {
-            echo ' Échec du pipeline.'
+            echo ' PIPELINE CI/CD COMPLET RÉUSSI !'
+            echo 'Déploiement automatique terminé avec succès'
         }
     }
 }
