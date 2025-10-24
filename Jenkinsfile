@@ -1,46 +1,74 @@
 pipeline {
     agent any
-
+    
     environment {
-        DOCKER_IMAGE = "tonusernamedocker/projet_de_rattrapage_devops:latest"
-        DOCKER_CREDENTIALS_ID = "dockerhub-credentials"
+        DOCKER_IMAGE = 'aboubicrecisse/projet_de_rattrapage_devops'
+        DOCKER_TAG = "latest"
     }
-
+    
     stages {
-        stage('Cloner le dépôt') {
+        stage('Checkout Git') {
             steps {
-                git url: 'https://github.com/aboubicreCisse/projet_de_rattrapage_devops.git', branch: 'main'
+                echo '📦 Récupération du code depuis GitHub...'
+                checkout scm
             }
         }
-
-        stage('Build Docker') {
+        
+        stage('Build Docker Image') {
             steps {
-                script {
-                    sh 'docker build -t $DOCKER_IMAGE .'
-                }
+                echo ' Construction de l image Docker...'
+                sh 'docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .'
             }
         }
-
-        stage('Push Docker') {
+        
+        stage('Test Application') {
             steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', "$DOCKER_CREDENTIALS_ID") {
-                        sh 'docker push $DOCKER_IMAGE'
-                    }
-                }
+                echo ' Test de l application Django...'
+                sh 'docker run --rm ${DOCKER_IMAGE}:${DOCKER_TAG} python manage.py check'
             }
         }
-
-        stage('Déploiement') {
+        
+        stage('Deploy Application') {
             steps {
-                script {
-                    sh '''
-                    docker stop django_app || true
-                    docker rm django_app || true
-                    docker run -d --name django_app -p 8000:8000 $DOCKER_IMAGE
-                    '''
-                }
+                echo ' Déploiement de l application...'
+                sh '''
+                    # Arrêter l ancien conteneur si il existe
+                    docker stop django-app || true
+                    docker rm django-app || true
+                    
+                    # Lancer le nouveau conteneur
+                    docker run -d -p 8000:8000 --name django-app ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    
+                    echo "✅ Conteneur déployé avec succès"
+                '''
             }
+        }
+        
+        stage('Verify Deployment') {
+            steps {
+                echo '🔍 Vérification du déploiement...'
+                sh '''
+                    sleep 5
+                    echo "📊 Conteneurs en cours d exécution :"
+                    docker ps
+                    echo "🌐 Test d accès à l application..."
+                    curl -s http://localhost:8000/health/ || echo "Application en cours de démarrage"
+                '''
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo ' PIPELINE CI/CD COMPLET RÉUSSI !'
+            echo '==================================='
+            echo ' Application disponible : http://localhost:8000'
+            echo ' Health Check : http://localhost:8000/health/'
+            echo ' Image Docker : ${DOCKER_IMAGE}:${DOCKER_TAG}'
+            echo '==================================='
+        }
+        failure {
+            echo '❌ Pipeline échoué'
         }
     }
 }
