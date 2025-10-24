@@ -4,26 +4,26 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                echo ' Téléchargement du code depuis GitHub...'
+                echo '📦 Téléchargement du code depuis GitHub...'
                 checkout scm
             }
         }
         
         stage('Validate Project') {
             steps {
-                echo ' Vérification des fichiers...'
+                echo '📋 Vérification des fichiers...'
                 sh '''
                     echo "Voici les fichiers de ton projet :"
                     ls -la
                     echo " "
-                    echo " Structure validée !"
+                    echo "✅ Structure validée !"
                 '''
             }
         }
         
         stage('Show Docker Instructions') {
             steps {
-                echo ' Instructions pour Docker :'
+                echo '🐳 Instructions pour Docker :'
                 sh '''
                     echo " "
                     echo "POUR DÉPLOYER MANUELLEMENT :"
@@ -38,7 +38,7 @@ pipeline {
     
     post {
         success {
-            echo ' SUCCÈS ! Pipeline terminé.'
+            echo '🎉 SUCCÈS ! Pipeline terminé.'
             echo 'Ton projet est prêt pour le déploiement Docker.'
         }
     }
