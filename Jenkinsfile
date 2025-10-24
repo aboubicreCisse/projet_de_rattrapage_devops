@@ -25,9 +25,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Déploiement du conteneur Docker..."
-                // Arrêter le conteneur s'il existe déjà
                 sh 'docker stop mon-app || true && docker rm mon-app || true'
-                // Lancer le nouveau conteneur
                 sh 'docker run -d -p 8000:8000 --name mon-app mon-app-devops'
             }
         }
