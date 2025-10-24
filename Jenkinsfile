@@ -1,45 +1,44 @@
 pipeline {
     agent any
-    
+
     stages {
-        stage('Checkout Code') {
+        stage('Cloner le dépôt') {
             steps {
-                echo '📦 Téléchargement du code depuis GitHub...'
-                checkout scm
+                git branch: 'main', url: 'https://github.com/aboubicreCisse/projet_de_rattrapage_devops.git'
             }
         }
-        
-        stage('Validate Project') {
+
+        stage('Build Docker Image') {
             steps {
-                echo '📋 Vérification des fichiers...'
-                sh '''
-                    echo "Voici les fichiers de ton projet :"
-                    ls -la
-                    echo " "
-                    echo "✅ Structure validée !"
-                '''
+                echo "Construction de l'image Docker..."
+                sh 'docker build -t mon-app-devops .'
             }
         }
-        
-        stage('Show Docker Instructions') {
+
+        stage('Run Tests') {
             steps {
-                echo '🐳 Instructions pour Docker :'
-                sh '''
-                    echo " "
-                    echo "POUR DÉPLOYER MANUELLEMENT :"
-                    echo "1. docker build -t mon-app ."
-                    echo "2. docker run -p 8000:8000 mon-app"
-                    echo "3. Ouvrir http://localhost:8000"
-                    echo " "
-                '''
+                echo "Exécution des tests Django..."
+                sh 'docker run --rm mon-app-devops python manage.py test'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo "Déploiement du conteneur Docker..."
+                // Arrêter le conteneur s'il existe déjà
+                sh 'docker stop mon-app || true && docker rm mon-app || true'
+                // Lancer le nouveau conteneur
+                sh 'docker run -d -p 8000:8000 --name mon-app mon-app-devops'
             }
         }
     }
-    
+
     post {
         success {
-            echo '🎉 SUCCÈS ! Pipeline terminé.'
-            echo 'Ton projet est prêt pour le déploiement Docker.'
+            echo ' Pipeline exécuté avec succès !'
+        }
+        failure {
+            echo ' Échec du pipeline.'
         }
     }
 }
