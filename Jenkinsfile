@@ -4,26 +4,29 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                echo '🚀 DÉMARRAGE DU PIPELINE AUTOMATISÉ'
                 checkout scm
             }
         }
         
         stage('Build Docker Image') {
             steps {
-                echo ' Building Docker image...'
+                echo '🐳 CONSTRUCTION AUTOMATIQUE DE L IMAGE DOCKER...'
                 sh 'docker build -t jenkins-auto-app .'
+                echo '✅ IMAGE DOCKER CONSTRUITE AVEC SUCCÈS'
             }
         }
         
         stage('Deploy Automatically') {
             steps {
-                echo ' DEPLOYING APPLICATION...'
+                echo '🚀 DÉPLOIEMENT AUTOMATIQUE EN COURS...'
                 sh '''
-                    docker stop auto-app-$(date +%s) 2>/dev/null || true
+                    echo "=== LANCEMENT DU DÉPLOIEMENT AUTOMATIQUE ==="
+                    docker stop auto-app-$(date +%s) 2>/dev/null || echo "Aucun conteneur précédent"
                     docker run -d -p 8080:8000 --name auto-app-$(date +%s) jenkins-auto-app
-                    echo "AUTOMATIC DEPLOYMENT SUCCESSFUL!"
-                    echo " App URL: http://localhost:8080"
-                    echo " Health: http://localhost:8080/health/"
+                    echo "✅ DÉPLOIEMENT AUTOMATIQUE RÉUSSI !"
+                    echo "🌐 APPLICATION : http://localhost:8080"
+                    echo "🏥 HEALTH CHECK : http://localhost:8080/health/"
                 '''
             }
         }
@@ -31,7 +34,8 @@ pipeline {
     
     post {
         success {
-            echo ' AUTOMATED DEPLOYMENT WITH JENKINS WORKS!'
+            echo '🎉 OBJECTIF ATTEINT : DÉPLOIEMENT AUTOMATISÉ AVEC JENKINS !'
+            echo 'L application a été déployée automatiquement à chaque modification du code.'
         }
     }
 }
